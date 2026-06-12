@@ -129,7 +129,9 @@ async function changePassword() {
     return;
   }
 
-  localStorage.setItem(PASSWORD_HASH_KEY, await hashPassword(next));
+  const newHash = await hashPassword(next);
+  localStorage.setItem(PASSWORD_HASH_KEY, newHash);
+  if (typeof pushToCloud === 'function') pushToCloud('passwordHash', newHash);
   setUnlocked(true);
   showStatus('Mot de passe mis à jour');
 }

@@ -28,6 +28,7 @@ function getTypeConfigs() {
 
 function saveTypeConfigs(types) {
   localStorage.setItem(TYPE_CONFIG_KEY, JSON.stringify(types));
+  if (typeof pushToCloud === 'function') pushToCloud('typeConfigs', types);
 }
 
 function getTypeConfig(id) {
@@ -55,6 +56,7 @@ function getZones() {
 
 function saveZones(zones) {
   localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+  if (typeof pushToCloud === 'function') pushToCloud('zones', zones);
 }
 
 function generateZoneId() {

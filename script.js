@@ -33,6 +33,7 @@ function loadItems() {
 
 function saveItems(items) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  if (typeof pushToCloud === 'function') pushToCloud('items', items);
 }
 
 let items = loadItems();
