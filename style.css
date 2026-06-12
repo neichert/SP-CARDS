@@ -88,7 +88,7 @@ html, body {
   box-shadow: 0 1px 6px rgba(0,0,0,0.3);
 }
 
-.tool-btn, #cancel-mode-btn, #sidebar-toggle {
+.tool-btn, #cancel-mode-btn, #sidebar-toggle, #lock-toggle {
   padding: 8px 10px;
   font-size: 14px;
   border: 1px solid #ccc;
@@ -108,8 +108,13 @@ html, body {
   background: #f8f8f8;
 }
 
-#sidebar-toggle {
+#sidebar-toggle, #lock-toggle {
   box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+}
+
+#lock-toggle {
+  font-size: 18px;
+  padding: 6px 10px;
 }
 
 #sidebar {
@@ -192,7 +197,7 @@ html, body {
 }
 
 /* Modal */
-#modal-overlay {
+#modal-overlay, #password-modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.4);
@@ -202,11 +207,11 @@ html, body {
   justify-content: center;
 }
 
-#modal-overlay.visible {
+#modal-overlay.visible, #password-modal-overlay.visible {
   display: flex;
 }
 
-#modal {
+#modal, #password-modal {
   background: white;
   border-radius: 8px;
   padding: 20px;
@@ -214,18 +219,18 @@ html, body {
   max-width: 360px;
 }
 
-#modal h3 {
+#modal h3, #password-modal h3 {
   margin-top: 0;
 }
 
-#modal label {
+#modal label, #password-modal p {
   display: block;
   margin-bottom: 6px;
   font-size: 14px;
   color: #555;
 }
 
-#modal input {
+#modal input, #password-modal input {
   width: 100%;
   padding: 8px;
   margin-bottom: 16px;
@@ -234,13 +239,13 @@ html, body {
   font-size: 14px;
 }
 
-#modal-actions {
+#modal-actions, #password-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
-#modal-actions button {
+#modal-actions button, #password-modal-actions button {
   padding: 8px 14px;
   border: 1px solid #ccc;
   border-radius: 6px;
@@ -248,7 +253,7 @@ html, body {
   background: #f8f8f8;
 }
 
-#modal-save {
+#modal-save, #password-confirm {
   background: #2c7be5;
   color: white;
   border-color: #2c7be5;

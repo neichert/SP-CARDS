@@ -100,7 +100,7 @@ function buildPopupContent(item) {
   const delBtn = document.createElement('button');
   delBtn.textContent = '🗑 Supprimer';
   delBtn.style.marginTop = '6px';
-  delBtn.onclick = () => deleteItem(item.id);
+  delBtn.onclick = () => requireAuth(() => deleteItem(item.id));
   container.appendChild(delBtn);
 
   return container;
@@ -154,7 +154,7 @@ function renderSidebar() {
     const delBtn = document.createElement('button');
     delBtn.title = 'Supprimer';
     delBtn.textContent = '🗑';
-    delBtn.onclick = () => deleteItem(item.id);
+    delBtn.onclick = () => requireAuth(() => deleteItem(item.id));
     row.appendChild(delBtn);
 
     itemList.appendChild(row);
@@ -179,12 +179,14 @@ let tempLayer = null;
 const toolButtons = document.querySelectorAll('.tool-btn');
 toolButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    const newMode = btn.dataset.mode;
-    if (mode === newMode) {
-      setMode('none');
-    } else {
-      setMode(newMode);
-    }
+    requireAuth(() => {
+      const newMode = btn.dataset.mode;
+      if (mode === newMode) {
+        setMode('none');
+      } else {
+        setMode(newMode);
+      }
+    });
   });
 });
 
@@ -351,7 +353,9 @@ document.getElementById('export-btn').addEventListener('click', () => {
 });
 
 const importFile = document.getElementById('import-file');
-document.getElementById('import-btn').addEventListener('click', () => importFile.click());
+document.getElementById('import-btn').addEventListener('click', () => {
+  requireAuth(() => importFile.click());
+});
 
 importFile.addEventListener('change', () => {
   const file = importFile.files[0];
@@ -382,13 +386,15 @@ importFile.addEventListener('change', () => {
 });
 
 document.getElementById('clear-btn').addEventListener('click', () => {
-  if (items.length === 0) return;
-  if (confirm('Voulez-vous vraiment supprimer tous les éléments de la carte ? Cette action est irréversible.')) {
-    items = [];
-    saveItems(items);
-    renderAll();
-    showStatus('Toutes les données ont été effacées');
-  }
+  requireAuth(() => {
+    if (items.length === 0) return;
+    if (confirm('Voulez-vous vraiment supprimer tous les éléments de la carte ? Cette action est irréversible.')) {
+      items = [];
+      saveItems(items);
+      renderAll();
+      showStatus('Toutes les données ont été effacées');
+    }
+  });
 });
 
 // ---------- Search (Nominatim / OpenStreetMap) ----------
