@@ -272,24 +272,55 @@ document.getElementById('add-zone-btn').addEventListener('click', () => {
   startZoneDrawing();
 });
 
+// ---------- Zone mask ----------
+// Greys out everything outside the selected zone so only that area is visible.
+let zoneMaskLayer = null;
+
+function updateZoneMask(zone) {
+  if (zoneMaskLayer) {
+    map.removeLayer(zoneMaskLayer);
+    zoneMaskLayer = null;
+  }
+  if (!zone) return;
+
+  const bounds = L.latLngBounds(zone.bounds);
+  const outer = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+  const hole = [
+    [bounds.getSouth(), bounds.getWest()],
+    [bounds.getNorth(), bounds.getWest()],
+    [bounds.getNorth(), bounds.getEast()],
+    [bounds.getSouth(), bounds.getEast()],
+  ];
+
+  zoneMaskLayer = L.polygon([outer, hole], {
+    stroke: false,
+    fillColor: '#1a1a1a',
+    fillOpacity: 0.75,
+    interactive: false,
+  }).addTo(map);
+}
+
 // ---------- Switching maps ----------
 function switchMap(id) {
   setCurrentMapId(id);
 
   if (id === 'main') {
     map.setMaxBounds(null);
+    updateZoneMask(null);
   } else {
     const zone = getZones().find(z => z.id === id);
     if (!zone) {
       setCurrentMapId('main');
       mapSelect.value = 'main';
       map.setMaxBounds(null);
+      updateZoneMask(null);
       renderAll();
       return;
     }
     const bounds = L.latLngBounds(zone.bounds);
     map.flyToBounds(bounds);
     map.setMaxBounds(bounds.pad(0.05));
+    updateZoneMask(zone);
   }
 
   renderAll();
@@ -303,6 +334,7 @@ const initialZone = getCurrentZone();
 if (initialZone) {
   map.fitBounds(L.latLngBounds(initialZone.bounds));
   map.setMaxBounds(L.latLngBounds(initialZone.bounds).pad(0.05));
+  updateZoneMask(initialZone);
 }
 
 renderAll();
