@@ -2,8 +2,8 @@
 const STORAGE_KEY = 'fireMapItems';
 
 const TYPE_CONFIG = {
-  hydrant: { emoji: '🚒', color: '#e74c3c', label: 'Borne incendie' },
-  water:   { emoji: '💧', color: '#3498db', label: "Point d'eau" },
+  hydrant: { emoji: '🚒', color: '#e74c3c', label: 'Hydrant' },
+  water:   { emoji: '💧', color: '#3498db', label: "Point d'aspiration" },
   closure: { emoji: '🚧', color: '#f39c12', label: 'Route barrée' },
   danger:  { emoji: '⚠️', color: '#9b59b6', label: 'Danger / Accès difficile' },
   command: { emoji: '🏠', color: '#27ae60', label: 'Poste de commandement' },
