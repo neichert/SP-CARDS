@@ -1,14 +1,6 @@
 // ---------- Configuration ----------
 const STORAGE_KEY = 'fireMapItems';
 
-const TYPE_CONFIG = {
-  hydrant: { emoji: '🚒', color: '#e74c3c', label: 'Hydrant' },
-  water:   { emoji: '💧', color: '#3498db', label: "Point d'aspiration" },
-  closure: { emoji: '🚧', color: '#f39c12', label: 'Route barrée' },
-  danger:  { emoji: '⚠️', color: '#9b59b6', label: 'Danger / Accès difficile' },
-  command: { emoji: '🏠', color: '#27ae60', label: 'Poste de commandement' },
-};
-
 // ---------- Map setup ----------
 const map = L.map('map', { zoomControl: true });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -47,7 +39,7 @@ let items = loadItems();
 
 // ---------- Icon helper ----------
 function makeIcon(type) {
-  const conf = TYPE_CONFIG[type];
+  const conf = getTypeConfig(type);
   return L.divIcon({
     html: `<div class="map-pin" style="background:${conf.color}"><span>${conf.emoji}</span></div>`,
     className: '',
@@ -58,16 +50,26 @@ function makeIcon(type) {
 }
 
 // ---------- Render ----------
+function itemInZone(item, zone) {
+  if (!zone) return true;
+  const bounds = L.latLngBounds(zone.bounds);
+  const points = item.latlngs || [item.latlng];
+  return points.some(p => bounds.contains(p));
+}
+
 function renderAll() {
   itemsLayer.clearLayers();
-  items.forEach(item => renderItem(item));
+  const zone = getCurrentZone();
+  items
+    .filter(item => itemInZone(item, zone))
+    .forEach(item => renderItem(item));
   renderSidebar();
 }
 
 function renderItem(item) {
-  const conf = TYPE_CONFIG[item.type] || TYPE_CONFIG.danger;
+  const conf = getTypeConfig(item.type);
 
-  if (item.type === 'closure') {
+  if (item.latlngs) {
     const line = L.polyline(item.latlngs, {
       color: conf.color,
       weight: 5,
@@ -83,7 +85,7 @@ function renderItem(item) {
 }
 
 function buildPopupContent(item) {
-  const conf = TYPE_CONFIG[item.type] || TYPE_CONFIG.danger;
+  const conf = getTypeConfig(item.type);
   const container = document.createElement('div');
 
   const title = document.createElement('strong');
@@ -127,8 +129,11 @@ function renderSidebar() {
     return;
   }
 
-  items.forEach(item => {
-    const conf = TYPE_CONFIG[item.type] || TYPE_CONFIG.danger;
+  const zone = getCurrentZone();
+  items
+    .filter(item => itemInZone(item, zone))
+    .forEach(item => {
+    const conf = getTypeConfig(item.type);
     const row = document.createElement('div');
     row.className = 'item-row';
 
@@ -146,7 +151,7 @@ function renderSidebar() {
     goBtn.title = 'Centrer sur la carte';
     goBtn.textContent = '🎯';
     goBtn.onclick = () => {
-      const target = item.type === 'closure' ? item.latlngs[0] : item.latlng;
+      const target = item.latlngs ? item.latlngs[0] : item.latlng;
       map.setView(target, 17);
     };
     row.appendChild(goBtn);
@@ -173,42 +178,54 @@ function showStatus(text) {
 
 // ---------- Toolbar / modes ----------
 let mode = 'none';
-let pendingClosurePoints = [];
+let pendingLinePoints = [];
 let tempLayer = null;
 
-const toolButtons = document.querySelectorAll('.tool-btn');
-toolButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    requireAuth(() => {
-      const newMode = btn.dataset.mode;
-      if (mode === newMode) {
-        setMode('none');
-      } else {
-        setMode(newMode);
-      }
+const toolbar = document.getElementById('toolbar');
+
+function renderToolbar() {
+  toolbar.innerHTML = '';
+  getTypeConfigs().forEach(type => {
+    const btn = document.createElement('button');
+    btn.className = 'tool-btn';
+    btn.dataset.mode = type.id;
+    btn.title = type.label;
+    btn.textContent = `${type.emoji} ${type.label}`;
+    btn.classList.toggle('active', mode === type.id);
+    btn.addEventListener('click', () => {
+      requireAuth(() => {
+        if (mode === type.id) {
+          setMode('none');
+        } else {
+          setMode(type.id);
+        }
+      });
     });
+    toolbar.appendChild(btn);
   });
-});
+}
 
 document.getElementById('cancel-mode-btn').addEventListener('click', () => setMode('none'));
 
 function setMode(newMode) {
   mode = newMode;
-  pendingClosurePoints = [];
+  pendingLinePoints = [];
   clearTempLayer();
 
-  toolButtons.forEach(btn => {
+  document.querySelectorAll('.tool-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === mode);
   });
 
   if (mode === 'none') {
     showStatus('');
     statusBar.classList.remove('visible');
-  } else if (mode === 'closure') {
-    showStatus('Cliquez sur la carte pour placer le début de la route barrée');
   } else {
-    const conf = TYPE_CONFIG[mode];
-    showStatus(`Cliquez sur la carte pour placer : ${conf.label}`);
+    const conf = getTypeConfig(mode);
+    if (conf.lineMode) {
+      showStatus(`Cliquez sur la carte pour placer le début : ${conf.label}`);
+    } else {
+      showStatus(`Cliquez sur la carte pour placer : ${conf.label}`);
+    }
   }
 }
 
@@ -221,17 +238,18 @@ function clearTempLayer() {
 
 // ---------- Map click handling ----------
 map.on('click', e => {
-  if (mode === 'none') return;
+  if (mode === 'none' || mode === 'zone-draw') return;
 
-  if (mode === 'closure') {
-    handleClosureClick(e.latlng);
+  const conf = getTypeConfig(mode);
+  if (conf.lineMode) {
+    handleLineClick(mode, e.latlng);
   } else {
     handlePointClick(mode, e.latlng);
   }
 });
 
 function handlePointClick(type, latlng) {
-  const conf = TYPE_CONFIG[type];
+  const conf = getTypeConfig(type);
   tempLayer = L.marker(latlng, { icon: makeIcon(type) }).addTo(map);
 
   openModal(`Ajouter : ${conf.label}`, label => {
@@ -252,44 +270,91 @@ function handlePointClick(type, latlng) {
   });
 }
 
-function handleClosureClick(latlng) {
-  pendingClosurePoints.push(latlng);
+function handleLineClick(type, latlng) {
+  const conf = getTypeConfig(type);
+  pendingLinePoints.push(latlng);
 
-  if (pendingClosurePoints.length === 1) {
+  if (pendingLinePoints.length === 1) {
     clearTempLayer();
-    tempLayer = L.marker(latlng, { icon: makeIcon('closure') }).addTo(map);
-    showStatus('Cliquez sur la carte pour placer la fin de la route barrée');
-  } else if (pendingClosurePoints.length === 2) {
+    tempLayer = L.marker(latlng, { icon: makeIcon(type) }).addTo(map);
+    showStatus(`Cliquez sur la carte pour placer la fin : ${conf.label}`);
+  } else if (pendingLinePoints.length === 2) {
     clearTempLayer();
-    tempLayer = L.polyline(pendingClosurePoints, {
-      color: TYPE_CONFIG.closure.color,
+    tempLayer = L.polyline(pendingLinePoints, {
+      color: conf.color,
       weight: 5,
       dashArray: '8 8',
     }).addTo(map);
 
-    openModal('Ajouter : Route barrée', label => {
+    openModal(`Ajouter : ${conf.label}`, label => {
       items.push({
         id: generateId(),
-        type: 'closure',
-        latlngs: pendingClosurePoints.map(p => [p.lat, p.lng]),
+        type,
+        latlngs: pendingLinePoints.map(p => [p.lat, p.lng]),
         label,
       });
       saveItems(items);
       clearTempLayer();
-      pendingClosurePoints = [];
+      pendingLinePoints = [];
       renderAll();
-      showStatus('Route barrée ajoutée');
+      showStatus(`${conf.label} ajouté(e)`);
       setMode('none');
     }, () => {
       clearTempLayer();
-      pendingClosurePoints = [];
-      setMode('closure');
+      pendingLinePoints = [];
+      setMode(type);
     });
   }
 }
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ---------- Zone drawing ----------
+function startZoneDrawing() {
+  setMode('none');
+  mode = 'zone-draw';
+  let zoneTempLayer = null;
+  const zoneDrawPoints = [];
+  showStatus('Cliquez sur la carte pour placer le premier coin de la zone');
+  statusBar.classList.add('visible');
+
+  const onClick = e => {
+    zoneDrawPoints.push(e.latlng);
+
+    if (zoneDrawPoints.length === 1) {
+      showStatus('Cliquez sur la carte pour placer le coin opposé de la zone');
+    } else if (zoneDrawPoints.length === 2) {
+      map.off('click', onClick);
+      const bounds = L.latLngBounds(zoneDrawPoints);
+      zoneTempLayer = L.rectangle(bounds, { color: '#2c7be5', weight: 2, fillOpacity: 0.1 }).addTo(map);
+
+      openModal('Nom de la nouvelle carte', name => {
+        map.removeLayer(zoneTempLayer);
+        const zones = getZones();
+        const zone = {
+          id: generateZoneId(),
+          name: name || 'Carte sans nom',
+          bounds: [[bounds.getSouth(), bounds.getWest()], [bounds.getNorth(), bounds.getEast()]],
+        };
+        zones.push(zone);
+        saveZones(zones);
+        renderMapSelect();
+        mode = 'none';
+        showStatus('Carte créée');
+        mapSelect.value = zone.id;
+        switchMap(zone.id);
+      }, () => {
+        map.removeLayer(zoneTempLayer);
+        mode = 'none';
+        showStatus('');
+        statusBar.classList.remove('visible');
+      });
+    }
+  };
+
+  map.on('click', onClick);
 }
 
 // ---------- Modal ----------
@@ -482,6 +547,3 @@ document.addEventListener('click', e => {
     searchResults.classList.remove('visible');
   }
 });
-
-// ---------- Init ----------
-renderAll();
