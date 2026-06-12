@@ -17,15 +17,13 @@
     <div id="search-results"></div>
   </div>
 
-  <div id="toolbar">
-    <button class="tool-btn" data-mode="hydrant" title="Ajouter une borne incendie">🚒 Borne incendie</button>
-    <button class="tool-btn" data-mode="water" title="Ajouter un point d'eau">💧 Point d'eau</button>
-    <button class="tool-btn" data-mode="closure" title="Marquer une route barrée">🚧 Route barrée</button>
-    <button class="tool-btn" data-mode="danger" title="Signaler un danger / accès difficile">⚠️ Danger</button>
-    <button class="tool-btn" data-mode="command" title="Poste de commandement">🏠 PC</button>
-    <button id="cancel-mode-btn" title="Annuler le mode actif">✖ Annuler</button>
-  </div>
+  <select id="map-select" title="Changer de carte"></select>
 
+  <div id="toolbar"></div>
+
+  <button id="cancel-mode-btn" title="Annuler le mode actif">✖ Annuler</button>
+
+  <button id="config-toggle" title="Configuration">⚙️</button>
   <button id="lock-toggle" title="Verrouiller / déverrouiller l'édition">🔒</button>
   <button id="sidebar-toggle">☰ Liste</button>
 </div>
@@ -66,10 +64,32 @@
   </div>
 </div>
 
+<div id="config-modal-overlay">
+  <div id="config-modal">
+    <div id="config-header">
+      <h3>Configuration</h3>
+      <button id="config-close">✖</button>
+    </div>
+    <div id="config-tabs">
+      <button class="config-tab active" data-tab="types">Types de points</button>
+      <button class="config-tab" data-tab="zones">Cartes / Zones</button>
+    </div>
+    <div id="config-tab-types">
+      <div id="type-list"></div>
+      <button id="add-type-btn">➕ Ajouter un type</button>
+    </div>
+    <div id="config-tab-zones" style="display:none;">
+      <div id="zone-list"></div>
+      <button id="add-zone-btn">➕ Créer une carte (zone)</button>
+    </div>
+  </div>
+</div>
+
 <div id="status-bar"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="security.js"></script>
 <script src="script.js"></script>
+<script src="config.js"></script>
 </body>
 </html>
