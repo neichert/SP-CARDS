@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carte interactive - Pompiers</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="top-bar">
+  <div id="search-box">
+    <input type="text" id="search-input" placeholder="Rechercher une rue, une adresse...">
+    <div id="search-results"></div>
+  </div>
+
+  <div id="toolbar">
+    <button class="tool-btn" data-mode="hydrant" title="Ajouter une borne incendie">🚒 Borne incendie</button>
+    <button class="tool-btn" data-mode="water" title="Ajouter un point d'eau">💧 Point d'eau</button>
+    <button class="tool-btn" data-mode="closure" title="Marquer une route barrée">🚧 Route barrée</button>
+    <button class="tool-btn" data-mode="danger" title="Signaler un danger / accès difficile">⚠️ Danger</button>
+    <button class="tool-btn" data-mode="command" title="Poste de commandement">🏠 PC</button>
+    <button id="cancel-mode-btn" title="Annuler le mode actif">✖ Annuler</button>
+  </div>
+
+  <button id="lock-toggle" title="Verrouiller / déverrouiller l'édition">🔒</button>
+  <button id="sidebar-toggle">☰ Liste</button>
+</div>
+
+<div id="sidebar">
+  <h2>Éléments ajoutés</h2>
+  <div id="item-list"></div>
+  <div id="sidebar-actions">
+    <button id="export-btn">Exporter (JSON)</button>
+    <button id="import-btn">Importer</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none">
+    <button id="change-password-btn">Changer le mot de passe</button>
+    <button id="clear-btn" class="danger">Tout effacer</button>
+  </div>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <h3 id="modal-title">Ajouter un élément</h3>
+    <label for="modal-label">Nom / Note (optionnel)</label>
+    <input type="text" id="modal-label" placeholder="Ex: Borne devant le 12 rue de la Paix">
+    <div id="modal-actions">
+      <button id="modal-cancel">Annuler</button>
+      <button id="modal-save">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="password-modal-overlay">
+  <div id="password-modal">
+    <h3 id="password-modal-title">Authentification requise</h3>
+    <p id="password-modal-text">Saisissez le mot de passe pour modifier la carte.</p>
+    <input type="password" id="password-input" placeholder="Mot de passe" autocomplete="off">
+    <div id="password-modal-actions">
+      <button id="password-cancel">Annuler</button>
+      <button id="password-confirm">Valider</button>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="security.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
